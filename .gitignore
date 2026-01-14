@@ -21,4 +21,7 @@ exps/OM4.single_column.COBALT/CCE_restart/
 # Ignore the programs produced
 /builds/build/
 
-# Other files to ignore 
+# Other files to ignore
+*.stats
+*.out
+*_parameter_* 
