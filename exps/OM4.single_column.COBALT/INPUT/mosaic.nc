@@ -1,1 +1,1 @@
-/OM4_025.JRA.single_column/mosaic.nc
+/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/INPUT/mosaic.nc

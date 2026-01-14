@@ -1,1 +1,1 @@
-../BATS/land_mosaic.nc
+/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/INPUT/land_mosaic.nc
