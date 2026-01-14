@@ -1577,21 +1577,21 @@ subroutine user_add_tracers_FEISTY(tracer_list)
         name       = 'Md_B',         &
         longname   = 'Medium demersal fish biomass',  &
         units      = 'g m-3',      &
-        prog       = .true.) ! , &
+        prog       = .false.) ! , &
   !      init_value = FEISTY%IC)
 
     call g_tracer_add(tracer_list,package_name,&
         name       = 'Ld_B',         &
         longname   = 'Large demersal fish biomass',  &
         units      = 'g m-3',      &
-        prog       = .true.) ! , &
+        prog       = .false.) ! , &
   !      init_value = FEISTY%IC)			
 
     call g_tracer_add(tracer_list,package_name,&
         name       = 'BE_B',         &
         longname   = 'Benthic invertebrate biomass',  &
         units      = 'g m-3',      &
-        prog       = .true.) ! , &
+        prog       = .false.) ! , &
   !      init_value = FEISTY%IC)
 
     ! Diagnostic tracers:----------------------------
