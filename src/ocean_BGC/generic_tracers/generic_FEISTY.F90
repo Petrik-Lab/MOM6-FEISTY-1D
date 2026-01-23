@@ -1329,7 +1329,7 @@ subroutine user_add_params_FEISTY
     call g_tracer_add_param('A', FEISTY%A, 0.50)                          ! Adult predation reduction
     call g_tracer_add_param('pref_Mz', FEISTY%pref_Mz, 1.0 )              ! Preference Small fish for medium mesozooplankton group
     ! Medium Forage 
-    call g_tracer_add_param('pref_Mf_Mz', FEISTY%pref_Mf_Mz, 0.25)        ! Preference for Medium Mesozooplankton   
+    call g_tracer_add_param('pref_Mf_Mz', FEISTY%pref_Mf_Mz, FEISTY%Sm)        ! Preference for Medium Mesozooplankton   
     call g_tracer_add_param('pref_Mf_Lz', FEISTY%pref_Mf_Lz, 1.0)         ! Preference for Large Mesozooplankton
     call g_tracer_add_param('pref_Mf_S', FEISTY%pref_Mf_S, 1.0)           ! Preference for small fish
     ! Medium pelagic 
@@ -2141,7 +2141,7 @@ subroutine generic_FEISTY_fish_update_from_source(tracer_list, Temp, prey_vec, &
     if (k .eq. nk) then ! If at bottom layer then take the integrated Fout from 
         fish(MD)%dBdt_fish(i,j,k) = sum(fish(SD)%Fout(i,j,1:nk) * FEISTY%Sd_B(i,j,1:nk) * dzt(1:nk)) + (fish(MD)%E_A(i,j,k) - fish(MD)%Fout(i,j,k)  - fish(MD)%mu) * fish(MD)%B 
     else ! SD from all layers migrates at the bottom layers!
-        fish(MD)%dBdt_fish(i,j,k) = -0.5
+        fish(MD)%dBdt_fish(i,j,k) = 0.0
     end if 
 
     ! Large fish (reproduction Fout = 0) 
@@ -2149,7 +2149,7 @@ subroutine generic_FEISTY_fish_update_from_source(tracer_list, Temp, prey_vec, &
     if (k .eq. nk) then
         fish(LD)%dBdt_fish(i,j,k) = fish(MD)%Fout(i,j,k) * fish(MD)%B + (fish(LD)%E_A(i,j,k) - fish(LD)%rho(i,j,k) - fish(LD)%mu) * fish(LD)%B 
     else ! LD from all layers migrates at the bottom layers!
-        fish(LD)%dBdt_fish(i,j,k) =  -0.5
+        fish(LD)%dBdt_fish(i,j,k) =  0.0
     end if 
 
     !:======================================================================
