@@ -1320,7 +1320,7 @@ subroutine user_add_params_FEISTY
     call g_tracer_add_param('kappa_a', FEISTY%kappa_a, 0.50)      ! Adult Fraction of energy available (E_a) invested in growth 
     call g_tracer_add_param('eps_R', FEISTY%eps_R, 0.010)         ! Reproduction efficiency: account for energy spend in reprodutive organe, aditional foraging activities, cost of migration, and death from egg release to hatchement. 
     ! Benthic chemostat
-    call g_tracer_add_param('beta', FEISTY%beta, 0.750)          ! Benthic Efficiency from detritus to benthic biomass
+    call g_tracer_add_param('beta', FEISTY%beta, 0.0750)          ! Benthic Efficiency from detritus to benthic biomass
     call g_tracer_add_param('CC', FEISTY%CC, 80.0)                ! Carring Capacity for benthic chemostat
 
     ! Parameters feeding preferences: ---------------------------------
@@ -1347,7 +1347,7 @@ subroutine user_add_params_FEISTY
     call g_tracer_add_param('pref_Ld_Md', FEISTY%pref_Ld_Md, 1.0)            ! Preference for Medium Demersal
     call g_tracer_add_param('pref_Ld_BE', FEISTY%pref_Ld_BE, 1.0)            ! Preference for Benthos
 
-    call g_tracer_add_param('Bent_eff'  , FEISTY%Bent_eff  , 0.75)
+    call g_tracer_add_param('Bent_eff'  , FEISTY%Bent_eff  , 0.075)
 
     ! Conversion from cobalt zooplankton and detritus to FEISTY  
     call g_tracer_add_param('convers_Mz', FEISTY%convers_Mz, 6.625*12.01*9.0 * 1035.0)       ! zooplankton biomass unit conversion conversion 
