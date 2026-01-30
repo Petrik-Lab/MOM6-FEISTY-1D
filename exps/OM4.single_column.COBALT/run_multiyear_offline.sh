@@ -92,7 +92,7 @@ mkdir RUNS
 
 # NO NEED TO EDIT THE INPUT FILE
 cd INPUT/
-/project/rdenechere/CEFI-regional-MOM6-FEISTY/link_database.sh "${LONG_NAME}"
+/home/cpetrik/Coupled_COBALT_FEISTY/Vertical/MOM6-FEISTY-1D/exps/OM4.single_column.COBALT/link_database.sh "${LONG_NAME}"
 cd ..
 
 # Check if the line do_FEISTY = .false. in input.nml

@@ -195,7 +195,7 @@ fi
 
 
 cd INPUT/
-/project/rdenechere/CEFI-regional-MOM6-FEISTY/link_database.sh "${LOC_NAME}"
+/home/cpetrik/Coupled_COBALT_FEISTY/Vertical/MOM6-FEISTY-1D/exps/OM4.single_column.COBALT/link_database.sh "${LOC_NAME}"
 cd ..
 
 
