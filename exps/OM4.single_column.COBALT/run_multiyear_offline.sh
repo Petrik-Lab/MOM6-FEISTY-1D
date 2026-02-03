@@ -224,7 +224,9 @@ echo "Saving feisty files to specific YEAR_FOLDER_PATH: $YEAR_FOLDER_PATH"
 yes | cp -i *feisty*.nc "$YEAR_FOLDER_PATH"
 yes | cp -i 20040101.ocean_cobalt_restart.nc "$YEAR_FOLDER_PATH"
 yes | cp -i 20040101.ocean_cobalt_btm.nc "$YEAR_FOLDER_PATH"
-yes | cp -i 20040101.ocean_daily.nc "$YEAR_FOLDER_PATH"
+yes | cp -i 20040101.ocean_month_z.nc "$YEAR_FOLDER_PATH"
+yes | cp -i 20040101.ocean_cobalt_tracers_month_z.nc "$YEAR_FOLDER_PATH"
+yes | cp -i 20040101.ocean_cobalt_fluxes_int.nc "$YEAR_FOLDER_PATH"
 
 
 ####################################################
