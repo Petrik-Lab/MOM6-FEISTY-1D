@@ -6,8 +6,7 @@
 # CONTACT: REMY DENECHERE <RDENECHERE@UCSD.EDU>
 #        : JARED BRZENSKI <JABRZENSKI@UCSD.EDU>
 #
-# usage: ./run_multiyear_offline.sh BATS 10 test core#
-#        ./run_multiyear_offline.sh CCE 20 baseparam core#
+# usage: ./run_multiyear_offline.sh 
 #
 # RUN THIS SCRIPT FROM THE CEFI/EXPS/OM4 DIRECTORY
 #
@@ -23,12 +22,41 @@
 # MPI_COMMAND="mpiexec --cpu-set # --bind-to core --report-bindings -np 1"
 #
 ###############################################################################
-# CHECK IF THE CORRECT NUMBER OF ARGUMENTS ARE PROVIDED
+#
+#FUNCTION TO KILL ALL SPAWNED PROCESSES
+cleanup() {
+  echo "Terminating all spawned processes..."
+  echo "Check the SCRATCH directory for any stray files."
+  echo "Killing processes DOES NOT clean up the file system."
+  for pid in "${pids[@]}"; do
+    kill "$pid" 2>/dev/null
+  done
+  exit 0
+}
 
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <Unique Name> <Location ID> <cpu_core>"
+# EMPTY ARRAY 
+pids=()
+
+# Trap Ctrl-C (SIGINT) and call cleanup function
+trap cleanup SIGINT
+
+# CHECK IF THE CORRECT NUMBER OF ARGUMENTS ARE PROVIDED
+if [ "$#" -ne 4 ]; then
+    echo "Usage: $0 <Location name> <number of year> <cpu_core> <Exp>"
     exit 1
 fi
+
+# ASSIGN ARGUMENTS TO VARIABLES
+LOC=$1
+NUM_YEARS=$2
+CPU_CORE=$3
+EXP=$4
+
+# Print the values of the arguments
+echo "Location name: $LOC"
+echo "Number of years: $NUM_YEARS"
+echo "CPU core: $CPU_CORE"
+echo "Experiment name: $EXP"
 
 ###############################################################################
 # CHECK TO SEE IF OTHER ENVIRONMENTAL VARIABLES ARE SET
@@ -49,13 +77,6 @@ else
 fi
 
 ###############################################################################
-# ASSIGN ARGUMENTS TO VARIABLES
-UNIQUE_NAME="$1"
-LOC_ID="$2"
-CPU_CORE="$3"
-#/project/rdenechere/COBALT_output/COBALT_offline_forcing_files/CCE
-
-###############################################################################
 # SET HOME DIRECTORY
 HOME_DIR=$(pwd)
 
@@ -63,16 +84,24 @@ HOME_DIR=$(pwd)
 UNIQUE_ID=10
 
 # SETUP FOLDER FOR PARALLES RUNS
-LONG_NAME="${UNIQUE_NAME}_loc${LOC_ID}"
+LONG_NAME="offline/${LOC}"
 WORK_DIR="${SCRATCH_DIR}/${LONG_NAME}"
 if [ -d "$WORK_DIR" ]; then
     echo "$WORK_DIR" exists 
 else 
     cd "${SCRATCH_DIR}"
-    mkdir "${LONG_NAME}"
+    if [ -d "offline" ]; then
+        echo "offline directory exists"
+    else
+        echo "offline directory does not exist, making it..."
+        mkdir offline
+    fi
+    cd offline
+    mkdir "${LOC}"
     cd "${HOME_DIR}"
 fi
 
+# CHECK IF THE WORKING DIRECTORY EXISTS
 if [ -d "$WORK_DIR" ]; then
 	echo "${WORK_DIR} exists, continuing..."
 else
@@ -82,19 +111,29 @@ fi
 
 ###############################################################################
 # COPY EVERYTHING TO THE SCRATCH DIRECTORY
+# clean work dir
+rm -rf "${WORK_DIR}"/*
 cp -rf * "${WORK_DIR}"
 
-# MOVE TO WROKING DIRECTORY
+# MOVE TO WORKING DIRECTORY
 cd "${WORK_DIR}"
 
 # MAKE THE RUNS DIRECTORY
-mkdir RUNS
+if [ -d "${WORK_DIR}/RUNS" ]; then
+    echo "RUNS Directory exists."
+else
+    echo "RUNS Directory does not exist, making it..."
+    mkdir RUNS
+fi
 
 # NO NEED TO EDIT THE INPUT FILE
 cd INPUT/
-/home/cpetrik/Coupled_COBALT_FEISTY/Vertical/MOM6-FEISTY-1D/exps/OM4.single_column.COBALT/link_database.sh "${LONG_NAME}"
+/project/rdenechere/CEFI-regional-MOM6-FEISTY/link_database.sh "${LOC}"
 cd ..
 
+#########################################################
+#   CHESK IF FEISTY IS SETUP TO FALSE 
+#########################################################
 # Check if the line do_FEISTY = .false. in input.nml
 if sed -n '/^\s*do_FEISTY\s*=\s*\.true\.\s*$/p' input.nml > /dev/null; then
   echo "Found 'do_FEISTY = .true.' in input.nlm: COBALT is setup to run online with FEISTY"
@@ -111,69 +150,176 @@ else
   echo exit 1 
 fi
 
-
-####################################################
-#  RUN THE MODEL 
-####################################################
-cp "${CEFI_EXECUTABLE_LOC}" . 
-
-mpiexec --cpu-set "${CPU_CORE}" --bind-to core --report-bindings -np 1 ./MOM6SIS2 |& tee stdout."${UNIQUE_ID}".env
-#mpirun -np 1 ./MOM6SIS2 |& tee stdout."${UNIQUE_ID}".env
-
-####################################################
-# MOVE THE DATA TO A NEW FOLDER: 
-####################################################
-FOLDER_SAVE_LOC="${SAVE_DIR}/${LONG_NAME}"
-
-if [ -d "$FOLDER_SAVE_LOC" ]; then
-    echo "$FOLDER_SAVE_LOC" exist 
-else 
-    mkdir "$FOLDER_SAVE_LOC"
+#########################################################
+#  CHECK IF MODEL IS IN RESTART OR INITIALIZATION MODE 
+#  MODEL SHOULD BE IN INITIALIZATION MODE
+#########################################################
+# Check if the line contains input_filename = 'r' in input.nml
+if grep -q "input_filename = 'r'" input.nml; then
+    echo "Found 'input_filename = 'r'' in input.nml. Changing it to 'n'."
+    sed -i "s/input_filename = 'r'/input_filename = 'n'/g" input.nml
+    echo "Change complete."
+else
+    if grep -q "input_filename = 'n'" input.nml; then
+         echo "'input_filename = 'n'' continuing..."
+    else 
+        echo "input_filename value not found or invalid."
+        echo "Exiting..."
+        exit 1
+    fi
 fi
 
-yes | cp -i *feisty*.nc "$FOLDER_SAVE_LOC"
+####################################################
+#  CREATE DIRECTORY FOR THE ECPERIEMENT
+####################################################
+FOLDER_SAVE_LOC="RUNS/${LOC}/${EXP}"
+if [ -d "$FOLDER_SAVE_LOC" ]; then
+    echo "$FOLDER_SAVE_LOC" exist 
+    rm -rf "$FOLDER_SAVE_LOC"/*
+    echo "Cleaning up $FOLDER_SAVE_LOC"
+else 
+    cd RUNS 
+    if [ -d "${LOC}" ]; then
+        echo "RUNS/${LOC} exists... making a new folder for ${EXP}"
+        mkdir "${EXP}"
+    else
+        echo "RUNS/${LOC} does not exist, making it..."
+        mkdir "${LOC}"
+        cd "${LOC}"
+        mkdir "${EXP}"
+    fi
+    cd "${WORK_DIR}"
+fi
 
+# CHECK IF THE WORKING DIRECTORY EXISTS
+if [ -d "$FOLDER_SAVE_LOC" ]; then
+    echo "${FOLDER_SAVE_LOC} exists, continuing..."
+else
+    echo "${FOLDER_SAVE_LOC} does not exist, exiting..."
+    exit 1
+fi
+
+####################################################
+#  RUN THE MODEL FOR YEAR 1 
+####################################################
+echo "Copying executable from ${CEFI_EXECUTABLE_LOC} to here"
+yes | cp "${CEFI_EXECUTABLE_LOC}" . 
+
+mpiexec --cpu-set "${CPU_CORE}" --bind-to core --report-bindings -np 1 ./MOM6SIS2 |& tee stdout."${UNIQUE_ID}".env&
+pids+=($!)
+wait 
+
+####################################################
+# MOVE THE DATA TO A FOLDER IN RUN DIRECTORY: 
+####################################################
+YEAR_FOLDER_PATH="$FOLDER_SAVE_LOC/${LOC}_offline_yr_1"
+if [ -d "$YEAR_FOLDER_PATH" ]; then
+    echo "$YEAR_FOLDER_PATH" exist 
+    rm -rf "$YEAR_FOLDER_PATH"/*
+else 
+    mkdir "$YEAR_FOLDER_PATH"
+fi
+
+echo "Saving feisty files to specific YEAR_FOLDER_PATH: $YEAR_FOLDER_PATH"
+yes | cp -i *feisty*.nc "$YEAR_FOLDER_PATH"
+yes | cp -i 20040101.ocean_cobalt_restart.nc "$YEAR_FOLDER_PATH"
+yes | cp -i 20040101.ocean_cobalt_btm.nc "$YEAR_FOLDER_PATH"
+yes | cp -i 20040101.ocean_daily.nc "$YEAR_FOLDER_PATH"
+
+
+####################################################
+# Loop after 1st year: -----------------------------------
+## Set up restart in input.nml file and get restart files: (OLD METHOD)
+if [ $RESTART = "OLD" ]; then *
+    echo "RESTART is set to OLD, copying restart files to INPUT folder"
+    sed -i "s/input_filename = 'n'/input_filename = 'r'/g" input.nml
+    yes | cp -i RESTART/*.nc INPUT/
+elif [ $RESTART = "NEW" ]; then
+    rm -r INPUT/COBALT_2023_10_spinup_2003_subset.nc
+    rm -r COBALT_2023_10_spinup_2003_subset.nc
+    ./restart_COBALT ${LOC} 
+    yes | cp -i COBALT_2023_10_spinup_2003_subset.nc INPUT/
+    echo "Copied restart files to the INPUT folder"
+else 
+    echo "RESTART variable not set to OLD or NEW. Exiting..."
+    exit 1
+fi
+
+
+# LOOP THROUGH THE NUMBER OF YEARS
+for ((i=2; i<=NUM_YEARS; i++))
+do
+    echo ""
+    echo "--------------------------------------"
+    echo "Running year ${i} of ${NUM_YEARS}..."
+    
+    # RUN THE MODEL
+    mpiexec --cpu-set "${CPU_CORE}" --bind-to core --report-bindings -np 1 ./MOM6SIS2 |& tee stdout."${UNIQUE_ID}".env&
+    pids+=($!)
+    wait 
+
+    # MOVE THE DATA TO A NEW FOLDER: 
+    YEAR_FOLDER_PATH="$FOLDER_SAVE_LOC/${LOC}_offline_yr_${i}"
+    if [ -d "$YEAR_FOLDER_PATH" ]; then 
+        rm -rf "$YEAR_FOLDER_PATH"/*
+    else 
+        mkdir "$YEAR_FOLDER_PATH"
+    fi
+
+    echo "Saving feisty files to specific YEAR_FOLDER_PATH"
+    yes | cp -i *feisty*.nc "$YEAR_FOLDER_PATH"
+    yes | cp -i 20040101.ocean_cobalt_restart.nc "$YEAR_FOLDER_PATH"
+    yes | cp -i 20040101.ocean_cobalt_btm.nc "$YEAR_FOLDER_PATH"
+    yes | cp -i 20040101.ocean_daily.nc "$YEAR_FOLDER_PATH"
+
+    # get restart files: 
+    if [ $RESTART = "OLD" ]; then 
+        sed -i "s/input_filename = 'n'/input_filename = 'r'/g" input.nml
+        yes | cp -i RESTART/*.nc INPUT/
+    elif [ $RESTART = "NEW" ]; then
+        rm -r INPUT/COBALT_2023_10_spinup_2003_subset.nc
+        rm -r COBALT_2023_10_spinup_2003_subset.nc
+        ./restart_COBALT ${LOC} 
+        yes | cp -i COBALT_2023_10_spinup_2003_subset.nc INPUT/
+        echo "Copied restart files to the INPUT folder"
+    else 
+        echo "RESTART variable not set to OLD or NEW. Exiting..."
+        exit 1
+    fi
+done
+
+###############################################################################
+# End the experiment: ---------------------------------------------------------
+## save the restart files of last year for potential resimulation: 
+FOLDER_SAVE_RESTART="${LOC}_yr_${NUM_YEARS}_OFFLINE_RESTART"
+if [ -d "$FOLDER_SAVE_RESTART" ]; then
+    echo $FOLDER_SAVE_RESTART" exist "
+    echo "Cleaning up $FOLDER_SAVE_RESTART"
+    rm -rf "$FOLDER_SAVE_RESTART"/*
+else 
+    echo $FOLDER_SAVE_RESTART" does not exist making it..."
+    mkdir "$FOLDER_SAVE_RESTART"
+fi
+
+echo
+echo "Saving RESTART files into FOLDER_SAVE_RESTART"
+yes | cp -i RESTART/*.nc "$FOLDER_SAVE_RESTART"/
 
 ############################################
 # SAVE EVERYTHING IN THE SAVE DIRECTORY
 ############################################
-cp -r RUNS/* "$SAVE_DIR"
-cp -r "$FOLDER_SAVE_RESTART" "${SAVE_DIR}/${UNIQUE_NAME}"
+echo "Copying RUNS folder to SAVE_DIR"
+yes | cp -r RUNS/* "$SAVE_DIR"
+echo "Copying RESTART to SAVE_DIR"
+yes | cp -r "$FOLDER_SAVE_RESTART" "${SAVE_DIR}/${LOC}"
 
 cd "$HOME_DIR"
 # REMOVE WORKING DIRECTORY AND FOLDERS, ETC...
-rm -r "$WORK_DIR"
+# rm -r "$WORK_DIR"
 
 echo "Simulation done!"
 
-#####################################################
-#   ALTERNATIVE FOR CHEAKING do_FEISTY WITH AWK
-#####################################################
-# #!/bin/bash
-# FILE="input.nml"
-
-# # Function to return FEISTY value using awk
-# get_feisty_value() {
-# awk -F "=" '/do_FEISTY/ {
-#     # Trim spaces and periods around the value after the equal sign
-#     gsub(/^[. \t]+|[. \t]+$/, "", $2);
-#     print $2;
-#     }' "$FILE"
-# }
-
-# # Call the function and store the result
-# FEISTY_VALUE=$(get_feisty_value)
-
-# echo do_FEISTY value is: $FEISTY_VALUE
-
-# # Check the result and perform actions
-# if [[ "$FEISTY_VALUE" == "true" ]]; then
-#     echo "FEISTY is true. Performing Action 1."
-#     echo
-# elif [[ "$FEISTY_VALUE" == "false" ]]; then
-#     echo "FEISTY is false. Performing Action 2."
-#     echo
-# else
-#     echo "FEISTY value not found or invalid."
-#     echo
-# fi
+## Set up restart in input.nml file and move restart files into the INPUT folder: 
+if [ $RESTART = "OLD" ]; then 
+    sed -i "s/input_filename = 'r'/input_filename = 'n'/g" input.nml
+fi
