@@ -1,1 +1,1 @@
-../BATS/ocean_mask.nc
+/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/INPUT/ocean_mask.nc

@@ -1,0 +1,5 @@
+export CEFI_DATASET_LOC=/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/datasets/
+export CEFI_EXECUTABLE_LOC=/home/cpetrik/Coupled_COBALT_FEISTY/Vertical/MOM6-FEISTY-1D/builds/build/monkfish-linux-gnu/ocean_ice/prod/MOM6SIS2
+export SCRATCH_DIR=/scratch/cpetrik
+export SAVE_DIR=/project/Feisty/NC/MOM6-1D/test_multyr
+

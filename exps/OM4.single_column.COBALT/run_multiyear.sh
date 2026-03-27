@@ -7,8 +7,6 @@
 # CONTACT: REMY DENECHERE <RDENECHERE@UCSD.EDU>
 #        : JARED BRZENSKI <JABRZENSKI@UCSD.EDU>
 #
-# usage: ./run_COBALT_FEISTY_loop.sh BATS 10 test core#
-#        ./run_COBALT_FEISTY_loop.sh CCE 20 baseparam core#
 #
 # RUN THIS SCRIPT FROM THE CEFI/EXPS/OM4 DIRECTORY
 #
@@ -27,10 +25,10 @@
 # NONFMORT_DEFAULT=0.3
 # ENCOUNTER_DEFAULT=70
 # K_EXP_DEFAULT=1
-# K50_EXP_DEFAULT=1
+# Rfug_EXP_DEFAULT=1
+NUM_ARG=8
 
-
-#FUNCTION TO KILL ALL SPAWNED PROCESSES
+# FUNCTION TO KILL ALL SPAWNED PROCESSES
 cleanup() {
   echo "Terminating all spawned processes..."
   echo "Check the SCRATCH directory for any stray files."
@@ -47,9 +45,7 @@ pids=()
 # Trap Ctrl-C (SIGINT) and call cleanup function
 trap cleanup SIGINT
 
-
 DEFAULT_VALUES=false
-
 
 
 # CHECK IF THE CORRECT NUMBER OF ARGUMENTS ARE PROVIDED
@@ -59,21 +55,22 @@ if [ "$#" -eq 2 ]; then
     echo "Fmort"
     echo "Encounter"
     echo "K"
-    echo "K50"
+    echo "Rfug"
     echo ""
 fi
 
 
-if [ "$#" -ne 8 ] && [ "$#" -ne 2 ]; then
+if [ "$#" -ne $NUM_ARG ] && [ "$#" -ne 2 ]; then
     echo "Usage: $0 <Location Name> <number of (years)> <cpu_core> "
-    echo "<nonFmort Value> <encounter_val> <k value> <k50 value> <Experimentation Name>"
+    echo "<nonFmort Value> <encounter_val> <k value> <Rfug value> <Experimentation Name>"
     echo ""
     echo "nonFmort: fish mortality"
     echo "encounter val: coefficient of encounters [ 30 - 110 ]"
     echo "k value: exponent, k==1 function of 2nd type, k>1, function of thrid type"
-    echo "k50 value: exponent, 1 < k50 < 20"
+    echo "Rfug value:  10-10 < Rfug < 1"
     echo "Experimentation Name: subfolder to save data"
     echo ""
+
     exit 1
 fi
 
@@ -110,7 +107,7 @@ else
     NONFMORT="$4"
     ENCOUNTER="$5"
     K_EXP="$6"
-    K50_EXP="$7"
+    Rfug_EXP="$7"
     EXP_NAME="$8"
 fi
 
@@ -123,23 +120,21 @@ UNIQUE_ID="${LOC_NAME}_CPU_${CPU_CORE}_nonFmort_${NONFMORT}_encounter_${ENCOUNTE
 
 # SETUP FOLDER FOR PARALLES RUNS
 if [ "$DEFAULT_VALUES" = true ]; then
-    UNIQUE_ID="${LOC_NAME}_CPU_${CPU_CORE}_nonFmort_DEFAULT_encounter_DEFAULT_k_DEFAULT_k50_DEFAULT"
-    LONG_NAME="${LOC_NAME}_nonFmort_DEFAULT_encounter_DEFAULT_k_DEFAULT_k50_DEFAUlt"
+    UNIQUE_ID="${LOC_NAME}_CPU_${CPU_CORE}_nonFmort_DEFAULT_encounter_DEFAULT_k_DEFAULT_Rfug_DEFAULT"
+    LONG_NAME="${LOC_NAME}_nonFmort_DEFAULT_encounter_DEFAULT_k_DEFAULT_Rfug_DEFAUlt"
 else
-    LONG_NAME="${LOC_NAME}_nonFmort_${NONFMORT}_encounter_${ENCOUNTER}_k_${K_EXP}_k50_${K50_EXP}"
-    UNIQUE_ID="${LOC_NAME}_CPU_${CPU_CORE}_nonFmort_${NONFMORT}_encounter_${ENCOUNTER}_k_${K_EXP}_k50_${K50_EXP}"
+    LONG_NAME="${LOC_NAME}_nonFmort_${NONFMORT}_encounter_${ENCOUNTER}_k_${K_EXP}_Rfug_${Rfug_EXP}"
+    UNIQUE_ID="${LOC_NAME}_CPU_${CPU_CORE}_nonFmort_${NONFMORT}_encounter_${ENCOUNTER}_k_${K_EXP}_Rfug_${Rfug_EXP}"
 fi
 
 WORK_DIR="${SCRATCH_DIR}/${EXP_NAME}/${LONG_NAME}"
-EXP_DIR="${SCRATCH_DIR}/${EXP_NAME}/"
 if [ -d "$WORK_DIR" ]; then
     echo "$WORK_DIR" exists 
 else 
-    echo "$WORK_DIR" does not exist
     cd "${SCRATCH_DIR}"
     if [ -d "$EXP_NAME" ]; then
         echo "$EXP_NAME" exists create "$LONG_NAME"
-        cd    "${EXP_NAME}"
+        cd "${EXP_NAME}"
         mkdir "${LONG_NAME}"
     else
         echo create "$EXP_NAME" and "$LONG_NAME"
@@ -150,11 +145,10 @@ else
     cd "${HOME_DIR}"
 fi
 
-
 if [ -d "$WORK_DIR" ]; then
 	echo "${WORK_DIR} exists, continuing..."
 else
-	echo "${WORK_DIR} does not exist, exiting..."
+	echo "${WORKDIR} does not exist, exiting..."
 	exit 1
 fi
 
@@ -173,9 +167,14 @@ else
     echo "RUNS Directory does not exist, making it..."
     mkdir RUNS
 fi
-#mkdir RUNS
 
-if [ "$#" -eq 7 ]; then
+## Turn on FEISTY: 
+NEW_LINE="do_FEISTY = .true."
+sed -i "/do_FEISTY/c\\ ${NEW_LINE}" input.nml
+
+if [ "$#" -eq $NUM_ARG ]; then
+
+    echo "editing the input file for nonFmort, encounter, k, and Rfug"
     # EDIT THE INPUT FILE FOR nonFmort
     NEW_LINE="nonFmort = ${NONFMORT}"
     sed -i "/nonFmort/c\\ ${NEW_LINE}" input.nml
@@ -188,16 +187,17 @@ if [ "$#" -eq 7 ]; then
     NEW_LINE="k_fct_tp = ${K_EXP}"
     sed -i "/k_fct_tp/c\\ ${NEW_LINE}" input.nml
 
-    # EDIT THE INPUT FILE FOR K50
-    NEW_LINE="k50 = ${K50_EXP}"
-    sed -i "/k50/c\\ ${NEW_LINE}" input.nml
+    # EDIT THE INPUT FILE FOR Rfug
+    NEW_LINE="Rfug = ${Rfug_EXP}"
+    sed -i "/Rfug/c\\ ${NEW_LINE}" input.nml
+else 
+    echo "Not using values for nonFmort, encounter, k, and Rfug, exiting..."
+    exit 1
 fi
-
 
 cd INPUT/
 /project/rdenechere/CEFI-regional-MOM6-FEISTY/link_database.sh "${LOC_NAME}"
 cd ..
-
 
 ####################################################
 #  RUN THE MODEL 
@@ -243,7 +243,12 @@ else
 fi
 
 echo "Saving feisty files to specific YEAR_FOLDER_PATH"
-yes | cp -i *feisty*.nc "$YEAR_FOLDER_PATH"
+yes | cp -i *feisty*.nc "$YEAR_FOLDER_PATH"/
+yes | cp -i 20040101.ocean_cobalt_restart.nc "$YEAR_FOLDER_PATH"
+yes | cp -i 20040101.ocean_cobalt_btm.nc "$YEAR_FOLDER_PATH"
+yes | cp -i 20040101.ocean_month_z.nc "$YEAR_FOLDER_PATH"
+yes | cp -i 20040101.ocean_cobalt_tracers_month_z.nc "$YEAR_FOLDER_PATH"
+yes | cp -i 20040101.ocean_cobalt_fluxes_int.nc "$YEAR_FOLDER_PATH"
 
 ###############################################################################
 # Loop after 1st year: --------------------------------------------------------
@@ -257,7 +262,7 @@ do
     YEAR_FOLDER_PATH="$FOLDER_SAVE_LOC/${LONG_NAME}_yr_${i}"
     if [ -d "$YEAR_FOLDER_PATH" ]; then 
         rm -rf "$YEAR_FOLDER_PATH"/*
-    else 
+    else
         mkdir "$YEAR_FOLDER_PATH"/
     fi
 
@@ -269,6 +274,11 @@ do
 
     echo "Copying feisty files to YEAR_FOLDER_PATH"
     yes | cp -i *feisty*.nc "$YEAR_FOLDER_PATH"/
+    yes | cp -i 20040101.ocean_cobalt_restart.nc "$YEAR_FOLDER_PATH"/
+    yes | cp -i 20040101.ocean_cobalt_btm.nc "$YEAR_FOLDER_PATH"/
+    yes | cp -i 20040101.ocean_month_z.nc "$YEAR_FOLDER_PATH"/
+    yes | cp -i 20040101.ocean_cobalt_tracers_month_z.nc "$YEAR_FOLDER_PATH"/
+    yes | cp -i 20040101.ocean_cobalt_fluxes_int.nc "$YEAR_FOLDER_PATH"/
 
     # get restart files: 
     echo "Copying RESTART files back to INPUT, there is some clobbering!"
@@ -300,6 +310,6 @@ yes | cp -r "$FOLDER_SAVE_RESTART" "${SAVE_DIR}/${LOC_NAME}"
 
 cd "$HOME_DIR"
 # REMOVE WORKING DIRECTORY AND FOLDERS, ETC...
-# rm -fr "$EXP_DIR"/
+rm -r "$WORK_DIR"
 
 echo "Simulation done!"

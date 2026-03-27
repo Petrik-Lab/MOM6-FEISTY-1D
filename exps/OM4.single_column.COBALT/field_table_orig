@@ -710,8 +710,8 @@ mu_mem_nmd_src_var_record = 1
 mu_mem_nmd_src_var_gridspec = NONE
 mu_mem_nmd_valid_min = 0.0
 #
-irr_aclm_src_file = INPUT/init_ocean_cobalt.res.nc
-irr_aclm_src_var_name = irr_mem
+irr_aclm_src_file = INPUT/COBALT_2023_10_spinup_2003_subset.nc
+irr_aclm_src_var_name = irr_aclm
 irr_aclm_src_var_unit = none
 irr_aclm_dest_var_name = irr_aclm
 irr_aclm_dest_var_unit = Watts/m^2
@@ -719,8 +719,8 @@ irr_aclm_src_var_record = 1
 irr_aclm_src_var_gridspec = NONE
 irr_aclm_valid_min = 0.0
 #
-irr_aclm_z_src_file = INPUT/init_ocean_cobalt.res.nc
-irr_aclm_z_src_var_name = irr_mem
+irr_aclm_z_src_file = INPUT/COBALT_2023_10_spinup_2003_subset.nc
+irr_aclm_z_src_var_name = irr_aclm_z
 irr_aclm_z_src_var_unit = none
 irr_aclm_z_dest_var_name = irr_aclm_z
 irr_aclm_z_dest_var_unit = Watts/m^2
@@ -728,8 +728,8 @@ irr_aclm_z_src_var_record = 1
 irr_aclm_z_src_var_gridspec = NONE
 irr_aclm_z_valid_min = 0.0
 #
-irr_aclm_sfc_src_file = INPUT/init_ocean_cobalt.res.nc
-irr_aclm_sfc_src_var_name = irr_mem
+irr_aclm_sfc_src_file = INPUT/COBALT_2023_10_spinup_2003_subset.nc
+irr_aclm_sfc_src_var_name = irr_aclm_sfc
 irr_aclm_sfc_src_var_unit = none
 irr_aclm_sfc_dest_var_name = irr_aclm_sfc
 irr_aclm_sfc_dest_var_unit = Watts/m^2

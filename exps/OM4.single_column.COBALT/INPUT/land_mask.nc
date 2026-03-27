@@ -1,1 +1,1 @@
-../BATS/land_mask.nc
+/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/INPUT/land_mask.nc

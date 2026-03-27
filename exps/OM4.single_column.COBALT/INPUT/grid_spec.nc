@@ -1,1 +1,1 @@
-../BATS/grid_spec.nc
+/project/rdenechere/CEFI-regional-MOM6-FEISTY/exps/OM4.single_column.COBALT/INPUT/grid_spec.nc
